@@ -27,6 +27,9 @@ public class Usuario {
     @Column(name = "edad")
     private int edad;
 
+    @Column(name = "total_puntos")
+    private int total_puntos;
+
     @Column(name = "fecha_registro", nullable = false)
     private LocalDate fechaRegistro;
 
