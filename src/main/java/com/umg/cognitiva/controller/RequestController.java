@@ -49,11 +49,6 @@ public class RequestController {
         Integer puntos = (Integer) parametros.get("puntos");    // Mantenemos puntos como Integer
 
         Optional<Usuario> usuario = cognitivaServices.actualizarPuntos(id, puntos);
-
-        if (usuario.isPresent()) {
-            return new ResponseEntity<>("Puntos de usuario " + usuario.get().getNombre() + " actualizados con éxito", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Error al actualizar puntos",HttpStatus.BAD_REQUEST);
-        }
+        return usuario.<ResponseEntity<?>>map(value -> new ResponseEntity<>("Puntos de usuario " + value.getNombre() + " actualizados con éxito", HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>("Error al actualizar puntos", HttpStatus.BAD_REQUEST));
     }
 }
