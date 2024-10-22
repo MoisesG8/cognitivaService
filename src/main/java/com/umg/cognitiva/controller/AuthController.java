@@ -25,15 +25,15 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO){
         try {
-            LoginResponse loginResponse = cognitivaServices.login(loginDTO.getEmail(), loginDTO.getPassword());
-            if(loginResponse != null){
-                return new ResponseEntity<>(loginResponse, HttpStatus.OK);
+            LoginResponse respuesta = cognitivaServices.login(loginDTO.getEmail(), loginDTO.getPassword());
+            if (respuesta != null) {
+                return ResponseEntity.ok(respuesta);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales Invalidas");
+                return  ResponseEntity.ok(new LoginResponse());
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             LOGGER.error("ERROR ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error durante el inicio de sesión.");
+            return  ResponseEntity.ok(new LoginResponse());
         }
     }
 

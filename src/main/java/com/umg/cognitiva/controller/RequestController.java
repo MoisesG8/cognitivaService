@@ -13,6 +13,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,10 +27,22 @@ public class RequestController {
 
     @PostMapping("/addUsuario")
     public ResponseEntity<?> addUsuario(@RequestBody Usuario usuario) {
-        if (cognitivaServices.crearUsuario(usuario)){
-            return new ResponseEntity<>("Usuario agregado con exito", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Error al crear el usuario", HttpStatus.BAD_REQUEST);
+        Map<String, String> response = new HashMap<>();
+        try {
+            if (cognitivaServices.crearUsuario(usuario)){
+                response.put("estado", "exito");
+                response.put("mensaje", "usuario creado exitosamentes");
+                return ResponseEntity.ok(response);
+
+            } else {
+                response.put("estado", "error");
+                response.put("mensaje", "usuario no ha sido creado");
+                return ResponseEntity.ok(response);
+            }
+        } catch (Exception e) {
+            response.put("estado", "error");
+            response.put("mensaje", "error al crear el usuario");
+            return ResponseEntity.ok(response);
         }
     }
 
