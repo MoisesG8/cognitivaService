@@ -13,10 +13,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -75,7 +72,7 @@ public class RequestController {
             List<Actividad> actividades = cognitivaServices.obtenerActividades();
             return new ResponseEntity<>(actividades, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(Collections.emptyList(),HttpStatus.OK);
         }
     }
 
