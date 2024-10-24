@@ -1,12 +1,15 @@
 package com.umg.cognitiva.services;
 
+import com.umg.cognitiva.dto.AddResultDTO;
 import com.umg.cognitiva.dto.LoginResponse;
 import com.umg.cognitiva.dto.SesionDTO;
 import com.umg.cognitiva.dto.UsuarioLoginResponse;
 import com.umg.cognitiva.model.Actividad;
+import com.umg.cognitiva.model.Resultado;
 import com.umg.cognitiva.model.Sesion;
 import com.umg.cognitiva.model.Usuario;
 import com.umg.cognitiva.repository.ActividadRepository;
+import com.umg.cognitiva.repository.ResultadoRepository;
 import com.umg.cognitiva.repository.SesionRepository;
 import com.umg.cognitiva.repository.UsuarioRepository;
 import com.umg.cognitiva.utilerias.JwTokenProvider;
@@ -31,6 +34,9 @@ public class CognitivaServices {
 
     @Autowired
     private SesionRepository sesionRepository;
+
+    @Autowired
+    private ResultadoRepository resultadoRepository;
 
     // Método para actualizar un usuario existente
     public Optional<Usuario> actualizarInfoUsuario(Long id, Usuario usuarioActualizado) {
@@ -88,6 +94,27 @@ public class CognitivaServices {
     // Método para obtener todas las actividades
     public List<Actividad> obtenerActividades() {
         return actividadRepository.findAll();
+    }
+
+    public boolean registrarResultado(AddResultDTO addResultDTO){
+
+        try {
+            Usuario usuario = usuarioRepository.findById(addResultDTO.getIdUsuario()).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            Actividad actividad = actividadRepository.findById(addResultDTO.getIdActividad()).orElseThrow(() -> new RuntimeException("Actividad no encontrado"));
+
+            Resultado nuevoResultado = new Resultado();
+            nuevoResultado.setUsuario(usuario);
+            nuevoResultado.setActividad(actividad);
+            nuevoResultado.setPuntuacion(addResultDTO.getPuntuacion());
+            nuevoResultado.setTiempoTotal(addResultDTO.getTiempoTotal());
+            nuevoResultado.setFechaRealizacion(addResultDTO.getFechaRealizacion());
+
+            resultadoRepository.save(nuevoResultado);
+            return true;
+        }catch (Exception e) {
+            return false;
+        }
+
     }
 
     // Método para registrar una nueva sesión

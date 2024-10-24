@@ -1,5 +1,6 @@
 package com.umg.cognitiva.controller;
 
+import com.umg.cognitiva.dto.AddResultDTO;
 import com.umg.cognitiva.dto.SesionDTO;
 import com.umg.cognitiva.model.Actividad;
 import com.umg.cognitiva.model.Usuario;
@@ -21,6 +22,7 @@ public class RequestController {
 
     @Autowired
     private CognitivaServices cognitivaServices;
+    @Qualifier("conversionService")
 
     @PostMapping("/addUsuario")
     public ResponseEntity<?> addUsuario(@RequestBody Usuario usuario) {
@@ -82,6 +84,15 @@ public class RequestController {
             return new ResponseEntity<>("Se ha registrado con exito", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Error al registrar sesion", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/registrarResultado")
+    public ResponseEntity<?> addResultado(@RequestBody AddResultDTO resultDTO){
+        if(cognitivaServices.registrarResultado(resultDTO)){
+            return new ResponseEntity<>("Se ha registrado con exito", HttpStatus.OK);
+        }else {
+            return new ResponseEntity<>("Error al registrar resultado", HttpStatus.BAD_REQUEST);
         }
     }
 }
