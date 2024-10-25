@@ -22,13 +22,14 @@ public class RequestController {
 
     @Autowired
     private CognitivaServices cognitivaServices;
+
     @Qualifier("conversionService")
 
     @PostMapping("/addUsuario")
     public ResponseEntity<?> addUsuario(@RequestBody Usuario usuario) {
         Map<String, String> response = new HashMap<>();
         try {
-            if (cognitivaServices.crearUsuario(usuario)){
+            if (cognitivaServices.crearUsuario(usuario)) {
                 response.put("estado", "exito");
                 response.put("mensaje", "usuario creado exitosamentes");
                 return ResponseEntity.ok(response);
@@ -74,25 +75,42 @@ public class RequestController {
             List<Actividad> actividades = cognitivaServices.obtenerActividades();
             return new ResponseEntity<>(actividades, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(Collections.emptyList(),HttpStatus.OK);
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
         }
     }
 
     @PostMapping("/registrarSesion")
-    public ResponseEntity<?> addSesion(@RequestBody SesionDTO sesionDTO){
-        if(cognitivaServices.registrarSesion(sesionDTO)){
-            return new ResponseEntity<>("Se ha registrado con exito", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Error al registrar sesion", HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> addSesion(@RequestBody SesionDTO sesionDTO) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            boolean b = cognitivaServices.registrarSesion(sesionDTO);
+            if (b) {
+                response.put("estado", "exito");
+            } else {
+                response.put("estado", "error");
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("estado", "error");
+            return ResponseEntity.ok(response);
         }
     }
 
     @PostMapping("/registrarResultado")
-    public ResponseEntity<?> addResultado(@RequestBody AddResultDTO resultDTO){
-        if(cognitivaServices.registrarResultado(resultDTO)){
-            return new ResponseEntity<>("Se ha registrado con exito", HttpStatus.OK);
-        }else {
-            return new ResponseEntity<>("Error al registrar resultado", HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> addResultado(@RequestBody AddResultDTO resultDTO) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            boolean b = cognitivaServices.registrarResultado(resultDTO);
+            if (b) {
+                response.put("estado", "exito");
+            } else {
+                response.put("estado", "error");
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("estado", "error");
+            return ResponseEntity.ok(response);
         }
     }
 }
