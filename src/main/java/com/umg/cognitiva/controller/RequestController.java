@@ -1,6 +1,7 @@
 package com.umg.cognitiva.controller;
 
 import com.umg.cognitiva.dto.AddResultDTO;
+import com.umg.cognitiva.dto.ResultadosXUsuario;
 import com.umg.cognitiva.dto.SesionDTO;
 import com.umg.cognitiva.model.Actividad;
 import com.umg.cognitiva.model.Usuario;
@@ -111,6 +112,15 @@ public class RequestController {
         } catch (Exception e) {
             response.put("estado", "error");
             return ResponseEntity.ok(response);
+        }
+    }
+
+    @GetMapping("/obtenerResultadosUsuario/{id}")
+    public ResponseEntity<?> obtenerResultadosUsuario(@PathVariable("id") Long id){
+        try{
+            return ResponseEntity.ok(cognitivaServices.obtenerResultadosUsuario(id));
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }

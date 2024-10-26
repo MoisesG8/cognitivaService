@@ -1,9 +1,6 @@
 package com.umg.cognitiva.services;
 
-import com.umg.cognitiva.dto.AddResultDTO;
-import com.umg.cognitiva.dto.LoginResponse;
-import com.umg.cognitiva.dto.SesionDTO;
-import com.umg.cognitiva.dto.UsuarioLoginResponse;
+import com.umg.cognitiva.dto.*;
 import com.umg.cognitiva.model.Actividad;
 import com.umg.cognitiva.model.Resultado;
 import com.umg.cognitiva.model.Sesion;
@@ -132,5 +129,14 @@ public class CognitivaServices {
         }catch (Exception e) {
             return false;
         }
+    }
+
+    public List<ResultadosXUsuario> obtenerResultadosUsuario(Long id){
+
+        Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        List<ResultadosXUsuario> resultados = resultadoRepository.obtenerResultadosConDetalles(id);
+        return resultados;
+
     }
 }
