@@ -29,11 +29,11 @@ public class AuthController {
             if (respuesta != null) {
                 return ResponseEntity.ok(respuesta);
             } else {
-                return  ResponseEntity.ok(new LoginResponse());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
             }
         } catch (Exception e) {
             LOGGER.error("ERROR ", e);
-            return  ResponseEntity.ok(new LoginResponse());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error en el login");
         }
     }
 

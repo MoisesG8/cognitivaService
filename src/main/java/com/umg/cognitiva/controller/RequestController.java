@@ -1,21 +1,21 @@
 package com.umg.cognitiva.controller;
 
-import com.umg.cognitiva.dto.AddResultDTO;
-import com.umg.cognitiva.dto.ResultadosXUsuario;
-import com.umg.cognitiva.dto.SesionDTO;
+import com.umg.cognitiva.dto.*;
 import com.umg.cognitiva.model.Actividad;
 import com.umg.cognitiva.model.Usuario;
 import com.umg.cognitiva.services.CognitivaServices;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -27,23 +27,49 @@ public class RequestController {
     @Qualifier("conversionService")
 
     @PostMapping("/addUsuario")
-    public ResponseEntity<?> addUsuario(@RequestBody Usuario usuario) {
-        Map<String, String> response = new HashMap<>();
-        try {
-            if (cognitivaServices.crearUsuario(usuario)) {
-                response.put("estado", "exito");
-                response.put("mensaje", "usuario creado exitosamentes");
-                return ResponseEntity.ok(response);
+    public ResponseEntity<?> addUsuario(
+            @Valid @RequestBody AddUserDTO dto,
+            BindingResult bindingResult) {
 
+        Map<String, Object> response = new HashMap<>();
+
+        if (bindingResult.hasErrors()) {
+            String errores = bindingResult.getFieldErrors()
+                    .stream()
+                    .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                    .collect(Collectors.joining("; "));
+            response.put("estado", "error");
+            response.put("mensaje", "Datos inválidos: " + errores);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(response);
+        }
+
+        try {
+            boolean resultado = cognitivaServices.crearUsuario(
+                    dto
+            );
+            if (resultado){
+                response.put("status", true);
+                response.put("mensaje", "Usuario creado exitosamente");
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(response);
             } else {
-                response.put("estado", "error");
-                response.put("mensaje", "usuario no ha sido creado");
-                return ResponseEntity.ok(response);
+                response.put("status", false);
+                response.put("mensaje", "No fue posible crear el usuario");
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(response);
             }
+
+
         } catch (Exception e) {
             response.put("estado", "error");
-            response.put("mensaje", "error al crear el usuario");
-            return ResponseEntity.ok(response);
+            response.put("mensaje", "Error interno al crear usuario");
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(response);
         }
     }
 
@@ -122,5 +148,19 @@ public class RequestController {
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    @PostMapping("/startSession")
+    public ResponseEntity<StartSessionResponseDTO> start(
+            @RequestBody StartSessionDTO dto) {
+        StartSessionResponseDTO resp = cognitivaServices.iniciarSesion(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+    }
+
+    @PutMapping("/{id}/endSession")
+    public ResponseEntity<EndSessionResponseDTO> end(
+            @PathVariable("id") Long sesionId) {
+        EndSessionResponseDTO resp = cognitivaServices.finalizarSesion(sesionId);
+        return ResponseEntity.ok(resp);
     }
 }

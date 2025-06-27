@@ -30,4 +30,7 @@ public class Actividad {
 
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDate fechaCreacion;
+
+    @Column(name = "ruta", nullable = false, length = 100)
+    private String ruta;
 }

@@ -13,7 +13,9 @@ import com.umg.cognitiva.utilerias.JwTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,9 +67,9 @@ public class CognitivaServices {
 
     public LoginResponse login(String email, String password) {
         LoginResponse loginResponse = new LoginResponse();
-        Optional <Usuario> usuario = usuarioRepository.findByCorreoAndPassword(email, password);
+        Optional usuario = usuarioRepository.spLogin(email, password);
         if (usuario.isPresent()) {
-            Usuario u = usuario.get();
+            Usuario u = (Usuario) usuario.get();
             String token = jwTokenProvider.generateToken(email);
             UsuarioLoginResponse usuarioLoginResponse = new UsuarioLoginResponse(u.getId(), u.getNombre(), u.getCorreo(), u.getTotal_puntos());
             loginResponse.setToken(token);
@@ -78,12 +80,20 @@ public class CognitivaServices {
         return loginResponse;
     }
 
-    public boolean crearUsuario(Usuario usuario) {
+    /**
+     * Llama al SP via repository y devuelve true si retorna un ID válido.
+     */
+    public boolean crearUsuario(AddUserDTO usuario) {
         try {
-            usuario.setFechaRegistro(LocalDate.now());
-            usuarioRepository.save(usuario);
-            return true;
-        }catch (Exception e) {
+            Integer newId = usuarioRepository.spRegistrarUsuario(
+                    usuario.getNombre(),
+                    usuario.getCorreo(),
+                    usuario.getPassword(),
+                    usuario.getEdad()
+            );
+            return newId != null;
+        } catch (Exception e) {
+            // loguea e si lo deseas
             return false;
         }
     }
@@ -138,5 +148,41 @@ public class CognitivaServices {
         List<ResultadosXUsuario> resultados = resultadoRepository.obtenerResultadosConDetalles(id);
         return resultados;
 
+    }
+
+    /** Crea la sesión y devuelve el ID y la fecha de inicio */
+    public StartSessionResponseDTO iniciarSesion(StartSessionDTO dto) {
+        Usuario u = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        Sesion sesion = new Sesion();
+        sesion.setUsuario(u);
+        sesion.setFechaInicio(LocalDateTime.now());
+        // fechaFin y duracion_total quedan null/0
+        sesion = sesionRepository.save(sesion);
+
+        return new StartSessionResponseDTO(
+                sesion.getId(),
+                sesion.getFechaInicio().toString()
+        );
+    }
+
+    /** Cierra la sesión abierta y calcula la duración */
+    public EndSessionResponseDTO finalizarSesion(Long sesionId) {
+        Sesion sesion = sesionRepository.findById(sesionId)
+                .orElseThrow(() -> new IllegalArgumentException("Sesión no encontrada"));
+
+        LocalDateTime fin = LocalDateTime.now();
+        sesion.setFechaFin(fin);
+        int segundos = (int) Duration.between(sesion.getFechaInicio(), fin).getSeconds();
+        sesion.setDuracionTotal(segundos);
+
+        sesionRepository.save(sesion);
+
+        return new EndSessionResponseDTO(
+                sesion.getId(),
+                segundos,
+                sesion.getFechaFin().toString()
+        );
     }
 }
