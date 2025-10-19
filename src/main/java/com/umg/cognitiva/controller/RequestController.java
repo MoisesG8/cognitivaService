@@ -1,5 +1,6 @@
 package com.umg.cognitiva.controller;
 
+import com.itextpdf.text.DocumentException;
 import com.umg.cognitiva.dto.*;
 import com.umg.cognitiva.model.Actividad;
 import com.umg.cognitiva.model.Usuario;
@@ -7,13 +8,11 @@ import com.umg.cognitiva.services.CognitivaServices;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -86,7 +85,7 @@ public class RequestController {
     }
 
     @PostMapping("/actualizarPuntos")
-    public ResponseEntity<?> actualizarUsuario(@RequestBody Map<String, Object> parametros) {
+    public ResponseEntity<?> actualizarPuntosUsuario(@RequestBody Map<String, Object> parametros) {
         // Convertir id y puntos con manejo adecuado de tipos
         Long id = ((Number) parametros.get("id")).longValue();  // Convierte a Long
         Integer puntos = (Integer) parametros.get("puntos");    // Mantenemos puntos como Integer
@@ -162,5 +161,62 @@ public class RequestController {
             @PathVariable("id") Long sesionId) {
         EndSessionResponseDTO resp = cognitivaServices.finalizarSesion(sesionId);
         return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/registrarEstadoAnimo")
+    public ResponseEntity<?> registrarEstadoAnimo(@RequestBody EstadoAnimoDTO dto) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            boolean b = cognitivaServices.registrarEstadoAnimo(dto);
+            if (b) {
+                response.put("estado", "exito");
+            } else {
+                response.put("estado", "error");
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("estado", "error");
+            return (ResponseEntity<?>) ResponseEntity.badRequest  ();
+        }
+    }
+
+    @GetMapping("/descargar/{usuarioId}")
+    public ResponseEntity<?> descargarReporte(@PathVariable Long usuarioId) throws IOException, DocumentException {
+        try {
+            byte[] pdf = cognitivaServices.generateEstadoAnimoPdf(usuarioId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(ContentDisposition
+                    .attachment()
+                    .filename("reporte_estado_animo.pdf")
+                    .build());
+
+            return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al generar pdf");
+        }
+    }
+
+    @GetMapping("/enviar-reporte/{usuarioId}")
+    public ResponseEntity<?> enviarReportePorCorreo(@PathVariable Long usuarioId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+
+            boolean enviado = cognitivaServices.enviarReporte(usuarioId);
+            if (enviado) {
+                response.put("estado", "exito");
+                response.put("status", true);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("estado", "error");
+                response.put("status", false);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al enviar el correo.");
+            }
+        } catch (Exception e) {
+            response.put("estado", "error");
+            response.put("status", false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }
