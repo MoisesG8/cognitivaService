@@ -143,6 +143,7 @@ public class CognitivaServices {
             resultadoRepository.save(nuevoResultado);
             return true;
         }catch (Exception e) {
+            System.out.println(e.getMessage());
             return false;
         }
 
@@ -169,7 +170,7 @@ public class CognitivaServices {
 
         Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        List<ResultadosXUsuario> resultados = resultadoRepository.obtenerResultadosConDetalles(id);
+        List<ResultadosXUsuario> resultados = resultadoRepository.findResultadosPorUsuario(id);
         return resultados;
 
     }
@@ -296,6 +297,7 @@ public class CognitivaServices {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         List<EstadoAnimoUsuario> estados = estadoAnimoUsuarioRepository.findByUsuarioId(usuarioId);
+        List<ResultadosXUsuario> resultados = resultadoRepository.findResultadosPorUsuario(usuarioId);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document document = new Document();
@@ -303,14 +305,16 @@ public class CognitivaServices {
         document.open();
 
         document.add(new Paragraph("Reporte de Estado de Ánimo del usuario: " + usuario.getNombre()));
-        document.add(new Paragraph("Fecha de generación: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy HH:mm:ss"))));
+        document.add(new Paragraph("Fecha de generación: " + LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy HH:mm:ss").withLocale(new Locale("es", "ES"))
+        )));
         document.add(new Paragraph(" "));
 
+        // Estado de ánimo
         if (estados.isEmpty()) {
             document.add(new Paragraph("El usuario no tiene registros de estado de ánimo."));
         } else {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy 'a las' hh:mm a").withLocale(new Locale("es", "ES"));
-
             for (EstadoAnimoUsuario estado : estados) {
                 String fechaFormateada = estado.getFecha().format(formatter);
                 String descripcion = (estado.getDescripcion() != null && !estado.getDescripcion().isEmpty())
@@ -322,8 +326,27 @@ public class CognitivaServices {
             }
         }
 
+        // SALTO DE PÁGINA
+        document.newPage();
+        document.add(new Paragraph("Reporte de Resultados por Actividad"));
+        document.add(new Paragraph("Usuario: " + usuario.getNombre() + " | Edad: " + usuario.getEdad()));
+        document.add(new Paragraph(" "));
+
+        if (resultados.isEmpty()) {
+            document.add(new Paragraph("NO HAY RESULTADOS."));
+        } else {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withLocale(new Locale("es", "ES"));
+            for (ResultadosXUsuario resultado : resultados) {
+                String fecha = resultado.getFechaRealizacion().format(formatter);
+                document.add(new Paragraph("Actividad: " + resultado.getNombreJuego() +
+                        " | Puntuación: " + resultado.getPuntuacion() +
+                        " | Fecha: " + fecha));
+            }
+        }
+
         document.close();
         return baos.toByteArray();
     }
+
 
 }

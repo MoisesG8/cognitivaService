@@ -125,27 +125,21 @@ public class RequestController {
 
     @PostMapping("/registrarResultado")
     public ResponseEntity<?> addResultado(@RequestBody AddResultDTO resultDTO) {
+        System.out.println("Ejecutando actualizacion "+resultDTO);
         Map<String, String> response = new HashMap<>();
         try {
             boolean b = cognitivaServices.registrarResultado(resultDTO);
             if (b) {
                 response.put("estado", "exito");
+                return ResponseEntity.ok(response);
             } else {
                 response.put("estado", "error");
+                return ResponseEntity.badRequest().body(response);
             }
-            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             response.put("estado", "error");
-            return ResponseEntity.ok(response);
-        }
-    }
-
-    @GetMapping("/obtenerResultadosUsuario/{id}")
-    public ResponseEntity<?> obtenerResultadosUsuario(@PathVariable("id") Long id){
-        try{
-            return ResponseEntity.ok(cognitivaServices.obtenerResultadosUsuario(id));
-        }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

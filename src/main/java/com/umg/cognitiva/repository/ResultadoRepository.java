@@ -10,10 +10,12 @@ import java.util.List;
 
 public interface ResultadoRepository extends JpaRepository<Resultado, Long> {
 
-    @Query("SELECT new com.umg.cognitiva.dto.ResultadosXUsuario(u.nombre, a.descripcion, r.puntuacion) " +
-            "FROM Resultado r " +
-            "JOIN r.actividad a " +
-            "JOIN r.usuario u "+
-            "WHERE r.usuario.id = :usuarioId")
-    List<ResultadosXUsuario> obtenerResultadosConDetalles(@Param("usuarioId") Long usuarioId);
+    @Query("SELECT new com.umg.cognitiva.dto.ResultadosXUsuario(" +
+            "u.nombre, u.edad, a.nombre, r.puntuacion, r.fechaRealizacion) " +
+            "FROM Usuario u " +
+            "JOIN Resultado r ON u.id = r.usuario.id " +
+            "JOIN Actividad a ON r.actividad.id = a.id " +
+            "WHERE u.id = :id")
+    List<ResultadosXUsuario> findResultadosPorUsuario(@Param("id") Long usuarioId);
+
 }

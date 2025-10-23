@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 @Data
 public class AddResultDTO {
-    //comentario
     private Long idUsuario;
     private Long idActividad;
     private int puntuacion;
