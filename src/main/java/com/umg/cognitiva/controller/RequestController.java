@@ -1,9 +1,12 @@
 package com.umg.cognitiva.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itextpdf.text.DocumentException;
 import com.umg.cognitiva.dto.*;
 import com.umg.cognitiva.model.Actividad;
+import com.umg.cognitiva.model.PersonaArbol;
 import com.umg.cognitiva.model.Usuario;
+import com.umg.cognitiva.model.UsuarioCorreos;
 import com.umg.cognitiva.services.CognitivaServices;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.*;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
@@ -101,7 +105,21 @@ public class RequestController {
             List<Actividad> actividades = cognitivaServices.obtenerActividades();
             return new ResponseEntity<>(actividades, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/listarFamiliares/{usuarioId}")
+    public ResponseEntity<?> listarFamiliares(@PathVariable Long usuarioId){
+        try {
+            List<PersonaArbol> familiares = cognitivaServices.obtenerPersonas(usuarioId);
+            if(familiares!=null && !familiares.isEmpty()){
+                return new ResponseEntity<>(familiares, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(Collections.emptyList(), HttpStatus.NOT_FOUND);
+            }
+        }catch (Exception e){
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -213,4 +231,40 @@ public class RequestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    @PostMapping(value = "/agregarPersona", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> agregarPersona(
+            @RequestPart("persona") String personaJson,
+            @RequestPart(value = "foto") MultipartFile foto
+    ) {
+        try {
+            PersonaArbolDTO personaDTO = new ObjectMapper().readValue(personaJson, PersonaArbolDTO.class);
+            PersonaArbol persona = cognitivaServices.agregarPersona(personaDTO, foto);
+            return ResponseEntity.ok(persona);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/registrarCorreo")
+    public ResponseEntity<?> agregarCorreo(@RequestBody UsuarioCorreoRequestDTO dto){
+        Map<String, String> response = new HashMap<>();
+        try {
+            UsuarioCorreos correo = cognitivaServices.agregarCorreoAdicional(dto);
+            if (correo != null) {
+                response.put("estado", "exito");
+                response.put("correo", correo.getCorreo());
+                return ResponseEntity.ok(response);
+            }else {
+                response.put("estado", "error");
+                response.put("correo", "error");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("estado", e.getMessage()));
+        }
+    }
+
+
 }

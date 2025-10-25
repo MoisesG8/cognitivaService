@@ -1,5 +1,7 @@
 package com.umg.cognitiva.services;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Paragraph;
@@ -17,16 +19,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class CognitivaServices {
@@ -54,6 +54,12 @@ public class CognitivaServices {
 
     @Autowired
     private UsuarioCorreosRepository usuarioCorreosRepository;
+
+    @Autowired
+    private Cloudinary cloudinary;
+
+    @Autowired
+    private PersonalArbolRepository personalArbolRepository;
 
     // Método para actualizar un usuario existente
     public Optional<Usuario> actualizarInfoUsuario(Long id, Usuario usuarioActualizado) {
@@ -125,6 +131,11 @@ public class CognitivaServices {
     // Método para obtener todas las actividades
     public List<Actividad> obtenerActividades() {
         return actividadRepository.findAll();
+    }
+
+    public List<PersonaArbol> obtenerPersonas(Long id) {
+        Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return personalArbolRepository.findByUsuarioId(id);
     }
 
     public boolean registrarResultado(AddResultDTO addResultDTO){
@@ -238,12 +249,6 @@ public class CognitivaServices {
         return usuarioCorreosRepository.save(correo);
     }
 
-    public List<UsuarioCorreos> obtenerCorreosPorUsuario(Long usuarioId) throws Exception {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new Exception("Usuario no encontrado con ID: " + usuarioId));
-        return usuarioCorreosRepository.findByUsuario(usuario);
-    }
-
 
     public boolean enviarReporte(Long usuario){
 
@@ -346,6 +351,40 @@ public class CognitivaServices {
 
         document.close();
         return baos.toByteArray();
+    }
+
+    public String subirFotoYObtenerUrl(MultipartFile foto, Long idUsuario) throws IOException {
+        String carpeta = "cognitiva/personas/" + idUsuario;
+        System.out.println("subiendo foto");
+        Map uploadResult = cloudinary.uploader().upload(foto.getBytes(), ObjectUtils.asMap(
+                "folder", carpeta,
+                "resource_type", "image"
+        ));
+        return (String) uploadResult.get("secure_url");
+    }
+
+    public PersonaArbol agregarPersona(PersonaArbolDTO dto, MultipartFile foto) throws IOException {
+        Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        PersonaArbol persona = new PersonaArbol();
+        persona.setUsuario(usuario);
+        persona.setNombre(dto.getNombre());
+        persona.setParentesco(dto.getParentesco());
+
+        if (dto.getIdPadre() != null) {
+            PersonaArbol padre = personalArbolRepository.findById(dto.getIdPadre())
+                    .orElseThrow(() -> new RuntimeException("Persona padre no encontrada"));
+            persona.setPadre(padre);
+        }
+        System.out.println("FOTO SI EXISTE ANTES DE IF nombre" + foto.getOriginalFilename());
+        if (foto != null && !foto.isEmpty()) {
+            System.out.println("FOTO SI EXISTE");
+            String url = subirFotoYObtenerUrl(foto, dto.getIdUsuario()); // Reutilizamos esta lógica
+            persona.setFotoUrl(url);
+        }
+
+        return personalArbolRepository.save(persona);
     }
 
 
